@@ -162,6 +162,40 @@ Rescue as RESCUED_TIN if:
 
 ---
 
+# Use of Primary Targets vs Capture Targets
+
+For Roche NimbleGen SeqCap EZ Exome v3 (and similar exome kits), the primary target BED and capture target BED should be used differently.
+
+| Step | Use primary targets? | Use capture targets? | Recommendation |
+|---|---:|---:|---|
+| Alignment | No | No | Align whole FASTQ to hg38. |
+| BQSR | Yes, usually padded | Optional | Use primary targets with interval padding (typically 50–100 bp). |
+| Coverage QC / on-target metrics | Yes | Yes | Report both primary-target coverage and capture-territory efficiency. |
+| Mutect2 | Yes, padded | Usually no | Use primary targets with interval padding for somatic calling. |
+| DeepSomatic | Yes, padded | Usually no | Use the same padded variant-calling intervals as Mutect2. |
+| Variant reporting | Yes | No | Report variants mainly in primary targets and optional splice/padding regions. |
+| CNVkit | Usually no | Yes | Use capture/bait regions for CNV modeling and normalization. |
+| CNVkit antitargets | Derived from capture targets | Yes | Generate antitargets from the capture-target BED. |
+| CNV reporting | Yes for interpretation | Yes for calling | Call CNAs from capture targets; annotate genes using primary targets. |
+| deTiN | Indirectly | Indirectly | Uses somatic variants and CN segments generated from previous steps. |
+
+## Recommended practical setup
+
+```text
+primary_targets.padded_50bp.bed
+  → Mutect2
+  → DeepSomatic
+  → BQSR intervals
+  → variant reporting intervals
+
+capture_targets.bed
+  → CNVkit target BED
+  → CNVkit antitarget generation
+  → capture efficiency QC
+```
+
+---
+
 # Recommended Modern Workflow Architecture
 
 ```text
